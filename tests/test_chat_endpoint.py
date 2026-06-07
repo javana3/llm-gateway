@@ -32,6 +32,10 @@ class FakeProvider(Provider):
             usage=Usage(prompt_tokens=1, completion_tokens=1, total_tokens=2),
         )
 
+    async def stream_chat(self, request: ChatCompletionRequest):
+        yield b'data: {"choices":[{"index":0,"delta":{"content":"pong"}}]}\n\n'
+        yield b"data: [DONE]\n\n"
+
 
 def test_health_endpoint():
     client = TestClient(app)
