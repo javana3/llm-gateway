@@ -22,5 +22,11 @@ class Settings(BaseSettings):
     vector_store_backend: str = "memory"  # "memory" | "redis"
     redis_url: str = "redis://localhost:6379"
 
+    # ---- 鉴权 / 限流 / 计费 ----
+    gateway_api_keys: str = "dev-key"  # 逗号分隔的可用 key（演示用）
+    default_rpm_limit: int = 60
+    default_quota_tokens: int = 1_000_000
+    price_per_1k_tokens: float = 0.001
+
 
 settings = Settings()
