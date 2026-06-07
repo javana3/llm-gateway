@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import StreamingResponse
 
 from app.providers.base import Provider
 from app.providers.minimax import MiniMaxProvider
@@ -13,9 +14,21 @@ def get_provider(request: Request) -> Provider:
     return MiniMaxProvider(client=request.app.state.http_client)
 
 
-@router.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+@router.post("/v1/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequest,
+    http_request: Request,
     provider: Provider = Depends(get_provider),
-) -> ChatCompletionResponse:
+):
+    if request.stream:
+
+        async def event_stream():
+            async for chunk in provider.stream_chat(request):
+                # 客户端断开则停止拉取下游，释放连接，避免“幽灵请求”。
+                if await http_request.is_disconnected():
+                    break
+                yield chunk
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
     return await provider.chat(request)
