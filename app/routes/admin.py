@@ -18,3 +18,9 @@ async def usage(request: Request) -> dict:
             for k in store.all()
         ]
     }
+
+
+@router.get("/admin/providers")
+async def providers(request: Request) -> dict:
+    rp = request.app.state.routing_provider
+    return {"chain": rp.chain, "circuits": rp.circuit_states()}

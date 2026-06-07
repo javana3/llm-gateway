@@ -2,7 +2,7 @@
 
 高并发大模型统一接入网关。应用只需对接一个 OpenAI 兼容接口，由网关统一完成流式转发、语义缓存、多供应商路由、限流计费。
 
-> 当前进度：M4a（鉴权 / 限流 / 计费）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
+> 当前进度：M4b（多供应商路由 / 熔断降级）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
 
 ## 快速开始
 
@@ -95,4 +95,18 @@ curl -H "Authorization: Bearer dev-key" -H "Content-Type: application/json" `
   http://127.0.0.1:8000/v1/chat/completions
 # 看用量：
 curl http://127.0.0.1:8000/admin/usage
+```
+
+## 多供应商路由 / 熔断降级（M4b）
+
+- **路由链**：`PROVIDER_CHAIN`（逗号分隔的 provider 名，如 `minimax,deepseek`）按序尝试。
+- **故障转移**：链中某 provider 调用失败，自动转移到下一个；流式仅在"首个分块前"可转移。
+- **熔断**：每个 provider 一个熔断器，连续失败达 `CIRCUIT_FAILURE_THRESHOLD` 即熔断（跳过），冷却 `CIRCUIT_RECOVERY_TIMEOUT` 秒后半开探测，成功则恢复。
+- **全部不可用** → 503。
+- **状态**：`GET /admin/providers` 查看链与各 provider 熔断状态。
+
+```powershell
+$env:PROVIDER_CHAIN = "minimax,deepseek"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+curl http://127.0.0.1:8000/admin/providers
 ```
