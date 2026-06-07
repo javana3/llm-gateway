@@ -2,7 +2,7 @@
 
 高并发大模型统一接入网关。应用只需对接一个 OpenAI 兼容接口，由网关统一完成流式转发、语义缓存、多供应商路由、限流计费。
 
-> 当前进度：M3（语义缓存）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
+> 当前进度：M4a（鉴权 / 限流 / 计费）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
 
 ## 快速开始
 
@@ -76,4 +76,23 @@ $env:MINIMAX_BASE_URL = "http://127.0.0.1:9000/v1"
 docker run -d --name redis-stack -p 6379:6379 redis/redis-stack:latest
 $env:VECTOR_STORE_BACKEND = "redis"
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+```
+
+## 鉴权 / 限流 / 计费（M4a）
+
+- **鉴权**：所有 `/v1/*` 请求需带 `Authorization: Bearer <key>`；key 由 `GATEWAY_API_KEYS`（逗号分隔）配置，无效返回 401。
+- **限流**：每个 key 按 `DEFAULT_RPM_LIMIT` 令牌桶限流，超限返回 429。
+- **计费**：按 token 计量（`PRICE_PER_1K_TOKENS`），实时扣减配额（`DEFAULT_QUOTA_TOKENS`），耗尽返回 429。**缓存命中不计费**。
+- **用量**：`GET /admin/usage` 查看每个 key 的 requests / used_tokens / remaining_tokens / cost。
+
+示例：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+# 带 key 调用：
+curl -H "Authorization: Bearer dev-key" -H "Content-Type: application/json" `
+  -d '{"model":"MiniMax-M2.5","messages":[{"role":"user","content":"hi"}],"temperature":0}' `
+  http://127.0.0.1:8000/v1/chat/completions
+# 看用量：
+curl http://127.0.0.1:8000/admin/usage
 ```
