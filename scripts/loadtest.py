@@ -13,9 +13,12 @@ import time
 import httpx
 
 
+_HEADERS = {"Authorization": "Bearer dev-key"}
+
+
 async def one_request(client: httpx.AsyncClient, url: str, payload: dict) -> float:
     t0 = time.perf_counter()
-    async with client.stream("POST", url, json=payload) as resp:
+    async with client.stream("POST", url, json=payload, headers=_HEADERS) as resp:
         async for _ in resp.aiter_bytes():
             pass
     return time.perf_counter() - t0
@@ -25,7 +28,8 @@ async def run(concurrency: int, total: int, url: str, payload: dict) -> None:
     sem = asyncio.Semaphore(concurrency)
     latencies: list[float] = []
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    limits = httpx.Limits(max_connections=2000, max_keepalive_connections=2000)
+    async with httpx.AsyncClient(timeout=120.0, limits=limits) as client:
         async def worker() -> None:
             async with sem:
                 latencies.append(await one_request(client, url, payload))

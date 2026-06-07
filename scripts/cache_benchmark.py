@@ -32,7 +32,7 @@ async def call(client, url, content):
         "messages": [{"role": "user", "content": content}],
         "temperature": 0.0,
     }
-    r = await client.post(url, json=body)
+    r = await client.post(url, json=body, headers={"Authorization": "Bearer dev-key"})
     r.raise_for_status()
     return time.perf_counter() - t0
 
