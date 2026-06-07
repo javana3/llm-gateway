@@ -4,7 +4,24 @@
 
 > 当前进度：M5（Prometheus 指标 / 可观测性）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
 
-## 快速开始
+## Docker 一键启动（推荐）
+
+需要本机 Docker。一条命令拉起 网关 + Redis(向量后端) + Prometheus + Grafana：
+
+```powershell
+# 可选：把真实 key 放进环境（否则缓存/路由仍可跑，仅真实下游调用需要）
+$env:MINIMAX_API_KEY = "你的key"
+docker compose up -d --build
+```
+
+- 网关：http://127.0.0.1:8000 （`/health` `/metrics` `/v1/chat/completions` …）
+- Prometheus：http://127.0.0.1:9090
+- Grafana：http://127.0.0.1:3000 （匿名可看，数据源已自动配好 Prometheus）
+- Redis Insight：http://127.0.0.1:8001
+
+停止：`docker compose down`
+
+## 快速开始（本地 venv）
 
 ```powershell
 # 1. 建虚拟环境并装依赖
