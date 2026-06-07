@@ -101,3 +101,22 @@ def test_quota_exhausted_returns_429():
             assert resp.status_code == 429
     finally:
         app.dependency_overrides.clear()
+
+
+def test_billing_records_usage_and_cache_hit_is_free():
+    app.dependency_overrides[get_provider] = lambda: DummyProvider()
+    try:
+        with TestClient(app) as client:
+            h = {"Authorization": "Bearer dev-key"}
+            # 第一次：未命中，按 usage.total_tokens(=2) 计费
+            client.post("/v1/chat/completions", json=BODY, headers=h)
+            # 第二次：相同请求命中缓存，0 token、0 成本，但仍计一次 request
+            client.post("/v1/chat/completions", json=BODY, headers=h)
+
+            usage = client.get("/admin/usage").json()
+            dev = next(k for k in usage["keys"] if k["name"] == "dev-key")
+            assert dev["requests"] == 2
+            assert dev["used_tokens"] == 2  # 仅第一次计了 2，命中那次 0
+            assert dev["cost"] > 0.0
+    finally:
+        app.dependency_overrides.clear()
