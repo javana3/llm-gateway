@@ -12,7 +12,7 @@ def main() -> None:
     resp = httpx.post(
         "http://127.0.0.1:8000/v1/chat/completions",
         json={
-            "model": "deepseek-chat",
+            "model": "MiniMax-M2.5",
             "messages": [{"role": "user", "content": "用一句话介绍你自己"}],
         },
         timeout=60.0,

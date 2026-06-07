@@ -2,12 +2,12 @@ from app.config import settings
 from app.providers.openai_compatible import OpenAICompatibleProvider
 
 
-class DeepSeekProvider(OpenAICompatibleProvider):
+class MiniMaxProvider(OpenAICompatibleProvider):
     def __init__(
         self, api_key: str | None = None, base_url: str | None = None
     ) -> None:
         super().__init__(
-            name="deepseek",
-            api_key=api_key or settings.deepseek_api_key,
-            base_url=base_url or settings.deepseek_base_url,
+            name="minimax",
+            api_key=api_key or settings.minimax_api_key,
+            base_url=base_url or settings.minimax_base_url,
         )

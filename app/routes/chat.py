@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends
 
 from app.providers.base import Provider
-from app.providers.deepseek import DeepSeekProvider
+from app.providers.minimax import MiniMaxProvider
 from app.schemas import ChatCompletionRequest, ChatCompletionResponse
 
 router = APIRouter()
 
 
 def get_provider() -> Provider:
-    """M1：固定返回 DeepSeek。M4 会扩展为按 model 路由。"""
-    return DeepSeekProvider()
+    """M1：固定返回 MiniMax（已有可用 key）。M4 会扩展为按 model 路由。"""
+    return MiniMaxProvider()
 
 
 @router.post("/v1/chat/completions", response_model=ChatCompletionResponse)
