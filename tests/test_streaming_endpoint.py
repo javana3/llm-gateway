@@ -12,6 +12,21 @@ from app.schemas import (
 )
 
 
+import pytest
+
+from app.auth.dependencies import authorize
+from app.auth.models import ApiKey
+
+
+@pytest.fixture(autouse=True)
+def _bypass_auth():
+    app.dependency_overrides[authorize] = lambda: ApiKey(
+        key="t", name="t", rpm_limit=1_000_000, quota_tokens=10**12
+    )
+    yield
+    app.dependency_overrides.pop(authorize, None)
+
+
 class StreamingFakeProvider(Provider):
     name = "streamfake"
 
