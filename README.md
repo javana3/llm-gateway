@@ -12,7 +12,9 @@
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # 2. 配置 key
-Copy-Item .env.example .env   # 然后编辑 .env 填入真实 DEEPSEEK_API_KEY
+Copy-Item .env.example .env   # 然后编辑 .env 填入真实 key
+# 当前默认供应商为 MiniMax：填 MINIMAX_API_KEY
+# 注意区域：国内区 base_url 用 https://api.minimaxi.com/v1（api.minimax.io 是国际区，key 不通用）
 
 # 3. 跑测试
 .\.venv\Scripts\python.exe -m pytest -v
