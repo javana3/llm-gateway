@@ -64,6 +64,7 @@ def test_chat_completions_returns_provider_response():
 
 
 def test_chat_completions_rejects_invalid_payload():
-    client = TestClient(app)
-    resp = client.post("/v1/chat/completions", json={"messages": []})
+    # 用 with 触发 lifespan，使共享 client 就绪（get_provider 依赖它）
+    with TestClient(app) as client:
+        resp = client.post("/v1/chat/completions", json={"messages": []})
     assert resp.status_code == 422  # 缺少 model 字段
