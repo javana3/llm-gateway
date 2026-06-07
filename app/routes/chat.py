@@ -6,7 +6,6 @@ from app.auth.dependencies import authorize
 from app.auth.models import ApiKey
 from app.config import settings
 from app.providers.base import Provider
-from app.providers.minimax import MiniMaxProvider
 from app.schemas import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -20,9 +19,8 @@ router = APIRouter()
 
 
 def get_provider(request: Request) -> Provider:
-    """M1：固定返回 MiniMax（已有可用 key）。M4b 会扩展为按 model 路由。
-    复用应用启动时创建的共享 httpx.AsyncClient（连接池）。"""
-    return MiniMaxProvider(client=request.app.state.http_client)
+    """返回应用启动时构建的 RoutingProvider（多供应商路由 + 熔断 + 故障转移）。"""
+    return request.app.state.routing_provider
 
 
 def _build_response(model: str, content: str) -> ChatCompletionResponse:

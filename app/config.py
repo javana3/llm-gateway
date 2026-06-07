@@ -28,5 +28,10 @@ class Settings(BaseSettings):
     default_quota_tokens: int = 1_000_000
     price_per_1k_tokens: float = 0.001
 
+    # ---- 多供应商路由 / 熔断 ----
+    provider_chain: str = "minimax"  # 逗号分隔的 provider 名，按序故障转移
+    circuit_failure_threshold: int = 3
+    circuit_recovery_timeout: float = 10.0
+
 
 settings = Settings()
