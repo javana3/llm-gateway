@@ -2,7 +2,7 @@
 
 高并发大模型统一接入网关。应用只需对接一个 OpenAI 兼容接口，由网关统一完成流式转发、语义缓存、多供应商路由、限流计费。
 
-> 当前进度：M4b（多供应商路由 / 熔断降级）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
+> 当前进度：M5（Prometheus 指标 / 可观测性）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
 
 ## 快速开始
 
@@ -109,4 +109,18 @@ curl http://127.0.0.1:8000/admin/usage
 $env:PROVIDER_CHAIN = "minimax,deepseek"
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 curl http://127.0.0.1:8000/admin/providers
+```
+
+## 指标 / 可观测性（M5）
+
+- `GET /metrics` 暴露 Prometheus 文本格式指标：
+  - `gateway_http_requests_total{method,path,status}` —— 请求量
+  - `gateway_http_request_duration_seconds{path}` —— 延迟直方图（可算 P50/P95/P99）
+  - `gateway_cache_hits_total` / `gateway_cache_misses_total` —— 缓存命中/未命中
+  - `gateway_tokens_total` —— 计费 token 总量
+- 用 Prometheus 抓取 `/metrics`，再在 Grafana 出 QPS / 延迟分位 / 缓存命中率 大盘。
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+curl http://127.0.0.1:8000/metrics
 ```
