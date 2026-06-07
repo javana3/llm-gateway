@@ -2,7 +2,7 @@ import struct
 
 import redis
 from redis.commands.search.field import TextField, VectorField
-from redis.commands.search.index_definition import IndexDefinition, IndexType
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
 
 from app.cache.vector_store import VectorStore
