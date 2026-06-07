@@ -2,7 +2,7 @@
 
 高并发大模型统一接入网关。应用只需对接一个 OpenAI 兼容接口，由网关统一完成流式转发、语义缓存、多供应商路由、限流计费。
 
-> 当前进度：M2（高并发异步流式转发）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
+> 当前进度：M3（语义缓存）。设计文档见 `docs/superpowers/specs/2026-06-07-llm-gateway-design.md`。
 
 ## 快速开始
 
@@ -52,3 +52,28 @@ $env:MINIMAX_BASE_URL = "http://127.0.0.1:9000/v1"
 `concurrency=50 total=500 wall=2.41s QPS=207.5 P50=210ms P95=360ms P99=520ms`
 
 逐步加大 `--concurrency`（如 10 / 50 / 100 / 200）记录 QPS 与 P95/P99，即可得到第一版并发-延迟数据。
+
+## 语义缓存（M3）
+
+- 多级缓存：L1 精确（prompt 哈希）+ L2 语义（fastembed 向量 + 余弦相似度阈值）。
+- 仅缓存低 temperature（`CACHE_MAX_TEMPERATURE`，默认 0.5）的请求，避免高随机性请求被错误命中。
+- 向量存储可插拔：默认内存（`VECTOR_STORE_BACKEND=memory`），可选 Redis（`=redis`，需 Docker 起 redis-stack）。
+- 命中即直接返回；流式命中则把缓存内容合成 SSE 回放，体验一致。
+- 统计：`GET /cache/stats` 返回 hits/misses/l1_hits/l2_hits/hit_ratio。
+
+跑命中率基准（先启动网关）：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+# 另一个终端：
+.\.venv\Scripts\python.exe scripts/cache_benchmark.py
+```
+
+可选启用 Redis 向量后端：
+
+```powershell
+# 需本机 Docker 已启动
+docker run -d --name redis-stack -p 6379:6379 redis/redis-stack:latest
+$env:VECTOR_STORE_BACKEND = "redis"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+```
