@@ -5,6 +5,7 @@ from app.auth.billing import estimate_tokens, record_usage
 from app.auth.dependencies import authorize
 from app.auth.models import ApiKey
 from app.config import settings
+from app.metrics import CACHE_HITS, CACHE_MISSES, TOKENS
 from app.providers.base import Provider
 from app.schemas import (
     ChatCompletionRequest,
@@ -52,6 +53,7 @@ async def chat_completions(
     if request.stream:
         cached = cache.get(request)
         if cached is not None:
+            CACHE_HITS.inc()
             record_usage(api_key, tokens=0, price_per_1k=price)  # 命中不计费
             return StreamingResponse(
                 replay_content_as_sse(cached), media_type="text/event-stream"
@@ -67,12 +69,16 @@ async def chat_completions(
             content = assemble_content_from_sse(b"".join(parts))
             if content:
                 cache.set(request, content)
-            record_usage(api_key, tokens=estimate_tokens(content), price_per_1k=price)
+            CACHE_MISSES.inc()
+            tokens = estimate_tokens(content)
+            TOKENS.inc(tokens)
+            record_usage(api_key, tokens=tokens, price_per_1k=price)
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
     cached = cache.get(request)
     if cached is not None:
+        CACHE_HITS.inc()
         record_usage(api_key, tokens=0, price_per_1k=price)  # 命中不计费
         return _build_response(request.model, cached)
 
@@ -80,5 +86,7 @@ async def chat_completions(
     content = resp.choices[0].message.content if resp.choices else ""
     if content:
         cache.set(request, content)
+    CACHE_MISSES.inc()
+    TOKENS.inc(resp.usage.total_tokens)
     record_usage(api_key, tokens=resp.usage.total_tokens, price_per_1k=price)
     return resp
