@@ -9,3 +9,4 @@ respx==0.22.*
 fastembed==0.7.*
 redis==5.*
 numpy==2.*
+prometheus-client>=0.20
